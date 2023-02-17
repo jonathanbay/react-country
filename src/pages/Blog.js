@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import Article from "../components/Article";
 import Logo from "../components/Logo";
 import Navigation from "../components/Navigation";
 
@@ -6,15 +8,30 @@ const Blog = () => {
   // State (état, données)
   const [content, setContent] = useState("");
   const [error, setError] = useState(false);
+  const [blogData, setBlogData] = useState("");
+  const [author, setAuthor] = useState("");
+
+  const getData = () => {
+    axios.get("http://localhost:3004/articles").then((res) => setBlogData(res.data));
+  };
+  useEffect(() => getData(), []);
 
   // Comportement
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if(content.length < 140) {
-        setError(true);
+    if (content.length < 140) {
+      setError(true);
     } else {
-        setError(false);
+      axios.post("http://localhost:3004/articles", {
+        author: author,
+        content: content,
+        date: Date.now(),
+      })
+      setError(false);
+      setAuthor("");
+      setContent("");
+      getData();
     }
   };
 
@@ -26,17 +43,29 @@ const Blog = () => {
       <h1>Blog</h1>
 
       <form onSubmit={handleSubmit}>
-        <input type="text" placeholder="Nom" />
+        <input type="text" 
+        placeholder="Nom" 
+        onChange={(e) => setAuthor(e.target.value)}
+        value={author} />
+
         <textarea
-        // Ajouter du style conditionnel
-        style={{border: error ? "1px solid red" : "1px solid #61dafb"}}
+          // Ajouter du style conditionnel
+          style={{ border: error ? "1px solid red" : "1px solid #61dafb" }}
           placeholder="Message"
           onChange={(e) => setContent(e.target.value)}
+          value={content}
         ></textarea>
         {error && <p>Veuillez écrire un minimun de 140 caractéres</p>}
         <input type="submit" value="Envoyer" />
       </form>
-      <ul></ul>
+
+      <ul>
+        {blogData
+        .sort((a, b) => b.date - a.date)
+        .map((article) => (
+          <Article key={article.id} article={article} />
+      ))}
+      </ul>
     </div>
   );
 };
